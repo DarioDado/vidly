@@ -1,0 +1,47 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Movies</h2>
+
+<br />
+
+
+<table id="movies" class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th scope="col">Movie</th>
+            <th scope="col">Genre</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+
+
+@section scripts
+{
+    <script>
+        $(document).ready(function () {
+            $("#movies").DataTable({
+                ajax: {
+                    url: "/api/movies",
+                    dataSrc: ""
+                },
+                columns: [
+                    {
+                        data: "name",
+                        render: function (data, type, movie) {
+                            return `<a href="/Movies/Details/${movie.id}">${data}</a>`;
+                        }
+                    },
+                    {
+                        data: "genre.name"
+                    }
+                ]
+            });
+        })
+    </script>
+}

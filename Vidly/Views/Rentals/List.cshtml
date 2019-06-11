@@ -1,0 +1,111 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Rentals</h2>
+<a class="btn btn-primary" href="/Rentals/New">NEW RENTAL</a>
+<br />
+<br />
+
+<table id="rentals" class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th scope="col">Customer</th>
+            <th scope="col">Movie</th>
+            <th scope="col">Date Rented</th>
+            <th scope="col">Date Returned</th>
+            <th scope="col">Return</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+@section scripts
+{
+    <script>
+        $(document).ready(function () {
+            var table = $("#rentals").DataTable({
+                ajax: {
+                    url: "/api/rentals",
+                    dataSrc: ""
+                },
+                columns: [
+                    {
+                        data: "customer.name"
+                    },
+                    {
+                        data: "movie.name"
+                    },
+                    {
+                        data: "dateRented",
+                        render: function (data) {
+                            var date = new Date(data);
+                            return formatDate(date);
+                        }
+                    },
+                    {
+                        data: "dateReturned",
+                        render: function (data) {
+                            if (!data) {
+                                return "";
+                            } else {
+                                var date = new Date(data);
+                                return formatDate(date);
+                            }
+                        }
+                    },
+                    {
+                        data: "id",
+                        render: function (data, type, rental) {
+                            if (!rental.dateReturned) {
+                                return `<button data-rental-id="${data}" class="btn-link js-return">Return</button>`;
+                            }
+                            return `<button data-rental-id="${data}" disabled class="btn-link disabled-link js-return">Return</button>`
+                        }
+                    },
+                ]
+            });
+
+
+
+            $("#rentals").on("click", ".js-return", function () {
+                var button = $(this);
+                bootbox.confirm("Are you sure this movie is returned?", function (result) {
+                    if (result) {
+                        $.ajax({
+                            url: "/api/rentals/" + button.attr("data-rental-id"),
+                            method: "PUT",
+                            success: function () {
+                                location.reload();
+                            }
+                        })
+                    }
+                });
+            });
+
+
+
+            function formatDate(date) {
+                var monthNames = [
+                    "January", "February", "March",
+                    "April", "May", "June", "July",
+                    "August", "September", "October",
+                    "November", "December"
+                ];
+
+                var day = date.getDate();
+                var monthIndex = date.getMonth();
+                var year = date.getFullYear();
+
+                return day + ' ' + monthNames[monthIndex] + ' ' + year;
+            }
+
+
+
+
+        })
+    </script>
+}
+

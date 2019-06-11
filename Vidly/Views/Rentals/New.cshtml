@@ -1,0 +1,145 @@
+﻿
+@{
+    ViewBag.Title = "New";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>New Rental Form</h2>
+
+<form id="new-rental-form">
+    <div class="form-group">
+        <label>Customer</label>
+        <div class="tt-container">
+            <input id="customer" name="customer" data-rule-validCustomer="true" required type="text" value="" class="form-control" />
+        </div>
+    </div>
+    <div class="form-group">
+        <label>Movie</label>
+        <div class="tt-container">
+            <input id="movie" type="text" data-rule-validMovie="true" value="" class="form-control" />
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <ul id="movies" class="list-group"></ul>
+        </div>
+    </div>
+
+    <button class="btn btn-primary">SUBMIT</button>
+</form>
+
+@section scripts
+{
+    @Scripts.Render("~/bundles/jqueryval")
+    <script>
+        $(document).ready(function () {
+
+            //view model
+            var vm = {
+                movieIds: []
+            };
+
+            var customers = new Bloodhound({
+                datumTokenizer: Bloodhound.tokenizers.obj.whitespace('name'),
+                queryTokenizer: Bloodhound.tokenizers.whitespace,
+                remote: {
+                    url: '/api/customers?query=%QUERY',
+                    wildcard: '%QUERY'
+                }
+            });
+
+            var movies = new Bloodhound({
+                datumTokenizer: Bloodhound.tokenizers.obj.whitespace('name'),
+                queryTokenizer: Bloodhound.tokenizers.whitespace,
+                remote: {
+                    url: '/api/movies?query=%QUERY',
+                    wildcard: '%QUERY'
+                }
+            });
+
+            $('#customer').typeahead(
+                {
+                    minLength: 3,
+                    highlight: true
+                },
+                {
+                    name: 'customers',
+                    display: 'name',
+                    source: customers
+                }
+            ).on("typeahead:select", function (e, customer) {
+                vm.customerId = customer.id;
+                $("#movie").focus();
+            });
+
+            $('#movie').typeahead(
+                {
+                    minLength: 3,
+                    highlight: true
+                },
+                {
+                    name: 'movies',
+                    display: 'name',
+                    source: movies
+                }
+            ).on("typeahead:select", function (e, movie) {
+                $("#movies").append(`<li class="list-group-item">${movie.name}</li>`);
+                $("#movie").typeahead("val", "");
+                vm.movieIds.push(movie.id);
+            });
+
+            $.validator.addMethod("validCustomer", function () {
+                return vm.customerId && vm.customerId !== 0;
+            }, "Please select a valid customer.");
+
+            $.validator.addMethod("validMovie", function () {
+                return vm.movieIds.length > 0;
+            }, "Please select a valid movie.");
+
+            var validator = $("#new-rental-form").validate({
+                submitHandler: function (e) {
+
+                    $.ajax({
+                        url: "/api/rentals",
+                        method: "post",
+                        data: vm
+                    })
+                    .done(function () {
+                        $("#movie").typeahead("val", "");
+                        $("#customer").typeahead("val", "");
+                        vm = { movieIds: [] };
+                        $("#movies").empty();
+                        toastr.success("Rentals successfully recorded.");
+                    })
+                    .fail(function () {
+                        toastr.error("Something went wrong");
+                    })
+
+                    return false
+                }
+            });
+
+            //$("#new-rental-form").submit(function (e) {
+            //    e.preventDefault();
+
+            //    $.ajax({
+            //        url: "/api/rentals",
+            //        method: "post",
+            //        data: vm
+            //    })
+            //    .done(function () {
+            //        $("#movie").typeahead("val", "");
+            //        $("#customer").typeahead("val", "");
+            //        vm = { movieIds: [] };
+            //        $("#movies").empty();
+            //        toastr.success("Rentals successfully recorded.");
+            //    })
+            //    .fail(function () {
+            //        toastr.error("Something went wrong");
+            //    });
+
+            //});
+        });
+    </script>    
+}
